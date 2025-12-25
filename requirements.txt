@@ -1,0 +1,41 @@
+   # Thin-Server ThinClient Manager
+# Python Dependencies
+#
+# Встановлення: pip3 install -r requirements.txt --break-system-packages
+#
+# Цей файл містить всі Python бібліотеки необхідні для роботи Thin-Server
+
+# ============================================
+# Core Flask Framework
+# ============================================
+Flask==3.0.0              # Веб-фреймворк
+Flask-SQLAlchemy==3.1.1   # ORM для роботи з базою даних
+Werkzeug==3.0.1           # WSGI утиліти для Flask
+
+# ============================================
+# Database
+# ============================================
+SQLAlchemy==2.0.23        # SQL toolkit та ORM
+
+# ============================================
+# Security & Cryptography
+# ============================================
+cryptography==41.0.7      # Шифрування RDP паролів (Fernet + PBKDF2)
+
+# ============================================
+# Utilities
+# ============================================
+pytz==2024.1              # Timezone support (Europe/Kyiv)
+click==8.1.7              # CLI framework (для cli.py інструментів)
+
+# ============================================
+# Rate Limiting (Optional)
+# ============================================
+Flask-Limiter==3.5.0      # Rate limiting для API endpoints
+
+# ============================================
+# Optional: Future Features
+# ============================================
+# Flask-Mail==0.9.1       # Email notifications
+# python-dotenv==1.0.0    # .env file support
+# redis==5.0.1            # Redis для rate limiting (замість memory)

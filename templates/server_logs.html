@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Logs - Thin-Server v{{ app_version }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container-main {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-header {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .btn-header:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            padding: 30px;
+        }
+
+        /* FILTERS */
+        .logs-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 12px;
+        }
+
+        .logs-filters > div {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .logs-filters label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+        }
+
+        .logs-filters select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+            background: white;
+        }
+
+        /* CATEGORY BADGES */
+        .log-categories {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 24px;
+            border-radius: 12px;
+            min-width: 120px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-weight: 600;
+            user-select: none;
+        }
+
+        .category-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .category-badge.active {
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+
+        .category-count {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .category-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Category Colors */
+        .cat-all { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .cat-application { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .cat-errors { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .cat-admin { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+        .cat-registration { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .cat-tftp { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+        .cat-nginx-access { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .cat-nginx-error { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); }
+        .cat-system { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+
+        /* LOGS TABLE */
+        .logs-table-wrapper {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+        }
+
+        .logs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .logs-table thead {
+            position: sticky;
+            top: 0;
+            background: #f9fafb;
+            z-index: 10;
+        }
+
+        .logs-table th {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #d1d5db;
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .logs-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+        }
+
+        .logs-table td.log-message {
+            max-width: 700px;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .logs-table td.log-time {
+            white-space: nowrap;
+            min-width: 140px;
+        }
+
+        .logs-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .log-level {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .log-level-info { background: #3b82f6; }
+        .log-level-warn { background: #f59e0b; }
+        .log-level-error { background: #ef4444; }
+
+        .log-category {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* SPINNER */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-main">
+        <!-- HEADER -->
+        <div class="header">
+            <div>
+                <h1>📋 Server Logs - Thin-Server v{{ app_version }}</h1>
+                <p>Monitor server activity, admin actions, and system events</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-success" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
+                    🔄 Auto-Refresh: ON
+                </button>
+                <a href="/" class="btn btn-header">🏠 Dashboard</a>
+                <a href="/admin" class="btn btn-header">⚙️ Admin</a>
+                <a href="/logout" class="btn btn-header">🚪 Logout</a>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- FILTERS -->
+            <div class="logs-filters">
+                <div>
+                    <label>⏰ Time Range:</label>
+                    <select id="timeFilter" onchange="refreshLogs()">
+                        <option value="1">Last Hour</option>
+                        <option value="6">Last 6 Hours</option>
+                        <option value="24" selected>Last 24 Hours</option>
+                        <option value="72">Last 3 Days</option>
+                        <option value="168">Last Week</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>📊 Level:</label>
+                    <select id="levelFilter" onchange="refreshLogs()">
+                        <option value="all">All Levels</option>
+                        <option value="INFO">INFO</option>
+                        <option value="WARN">WARN</option>
+                        <option value="ERROR">ERROR</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>🏷️ Source:</label>
+                    <select id="categoryFilter" onchange="refreshLogs()">
+                        <option value="all">All Sources</option>
+                        <option value="application">📱 Application</option>
+                        <option value="errors">❌ Errors</option>
+                        <option value="admin">👤 Admin</option>
+                        <option value="registration">✍️ Registration</option>
+                        <option value="tftp">📡 TFTP</option>
+                        <option value="nginx-access">🌐 Nginx Access</option>
+                        <option value="nginx-error">🔴 Nginx Error</option>
+                        <option value="system">⚙️ System</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; align-items: flex-end;">
+                    <button onclick="refreshLogs()" class="btn btn-primary" style="width: 100%;">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- CATEGORY BADGES -->
+            <div class="log-categories" id="logCategories">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
+            <!-- LOGS TABLE -->
+            <div class="logs-table-wrapper">
+                <table class="logs-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 180px;">Time</th>
+                            <th style="width: 80px;">Level</th>
+                            <th style="width: 120px;">Source</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 40px;">
+                                <div class="spinner"></div>
+                                <div style="margin-top: 10px;">Loading server logs...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+let currentCategory = 'all';
+let currentLevel = 'all';
+let autoRefreshInterval = null;
+
+// Start auto-refresh on page load
+window.addEventListener('DOMContentLoaded', () => {
+    refreshLogs();
+    startAutoRefresh();
+});
+
+// Stop refresh when leaving page
+window.addEventListener('beforeunload', () => {
+    stopAutoRefresh();
+});
+
+async function refreshLogs() {
+    const tbody = document.getElementById('logsTableBody');
+    const categoriesDiv = document.getElementById('logCategories');
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="4" style="text-align: center; padding: 40px;">
+                <div class="spinner"></div>
+                <div style="margin-top: 10px;">Loading server logs...</div>
+            </td>
+        </tr>
+    `;
+
+    try {
+        const hours = document.getElementById('timeFilter')?.value || 24;
+        const level = document.getElementById('levelFilter')?.value || 'all';
+        const category = document.getElementById('categoryFilter')?.value || 'all';
+
+        currentCategory = category;
+        currentLevel = level;
+
+        // Fetch logs from API
+        let url = `/api/server-logs/unified?hours=${hours}`;
+        if (level !== 'all') url += `&level=${level}`;
+        if (category !== 'all') url += `&category=${category}`;
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        const logs = data.logs || [];
+
+        // Fetch categories for stats
+        const categoriesResponse = await fetch(`/api/server-logs/categories?hours=${hours}`);
+        if (categoriesResponse.ok) {
+            const categoriesData = await categoriesResponse.json();
+            displayStats(categoriesData.categories || []);
+        }
+
+        if (logs.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px; color: #6b7280;">
+                        🔭 No server logs found
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = logs.map(log => {
+            const timestamp = formatDateTime(log.timestamp);
+            const level = String(log.level || 'INFO');
+            const category = String(log.category || 'other');
+            const message = String(log.message || '');
+
+            return `
+                <tr>
+                    <td class="log-time">${timestamp}</td>
+                    <td>
+                        <span class="log-level log-level-${level.toLowerCase()}">
+                            ${level}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="log-category" style="background: ${getCategoryColor(category)};">
+                            ${getCategoryIcon(category)} ${category.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="log-message">${escapeHtml(message)}</td>
+                </tr>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Error loading server logs:', error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 40px; color: #ef4444;">
+                    ✗ Error loading server logs: ${escapeHtml(error.message)}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function displayStats(categories) {
+    const categoriesDiv = document.getElementById('logCategories');
+
+    if (!categories || categories.length === 0) {
+        categoriesDiv.innerHTML = '<div style="text-align: center; padding: 10px; color: #6b7280;">No statistics available</div>';
+        return;
+    }
+
+    // Create map of categories
+    const categoryMap = {};
+    categories.forEach(cat => {
+        const id = (cat.id || 'other').toString().toLowerCase();
+        categoryMap[id] = parseInt(cat.count) || 0;
+    });
+
+    // Get total from API's 'all' category
+    const totalCount = categoryMap['all'] ||
+        categories.filter(c => c.id !== 'all').reduce((sum, cat) => sum + (parseInt(cat.count) || 0), 0);
+
+    // Define category order and mapping
+    const categoryOrder = ['all', 'application', 'errors', 'admin', 'registration', 'tftp', 'nginx-access', 'nginx-error', 'system'];
+    const categoryLabels = {
+        'all': 'ALL',
+        'application': 'APPLICATION',
+        'errors': 'ERRORS',
+        'admin': 'ADMIN',
+        'registration': 'REGISTRATION',
+        'tftp': 'TFTP',
+        'nginx-access': 'NGINX ACCESS',
+        'nginx-error': 'NGINX ERROR',
+        'system': 'SYSTEM'
+    };
+
+    // Build HTML for all categories in order
+    categoriesDiv.innerHTML = categoryOrder.map(catId => {
+        const count = catId === 'all' ? totalCount : (categoryMap[catId] || 0);
+        const label = categoryLabels[catId] || catId.toUpperCase();
+        const icon = getCategoryIcon(catId);
+        const isActive = currentCategory === catId;
+
+        return `
+            <div class="category-badge cat-${catId} ${isActive ? 'active' : ''}"
+                 onclick="filterByCategory('${catId}')"
+                 title="Click to filter by ${label}">
+                <div class="category-count">${count}</div>
+                <div class="category-label">${icon} ${label}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterByCategory(category) {
+    currentCategory = category;
+
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+        categoryFilter.value = category;
+    }
+
+    refreshLogs();
+}
+
+function getCategoryColor(category) {
+    const cat = (category || 'other').toString().toLowerCase();
+
+    const colors = {
+        'all': '#667eea',
+        'application': '#10b981',
+        'errors': '#ef4444',
+        'admin': '#6366f1',
+        'registration': '#10b981',
+        'tftp': '#06b6d4',
+        'nginx-access': '#3b82f6',
+        'nginx-error': '#dc2626',
+        'system': '#8b5cf6',
+        'other': '#6b7280'
+    };
+
+    return colors[cat] || colors['other'];
+}
+
+function getCategoryIcon(category) {
+    const cat = (category || 'other').toString().toLowerCase();
+
+    const icons = {
+        'all': '📊',
+        'application': '📱',
+        'errors': '❌',
+        'admin': '👤',
+        'registration': '✍️',
+        'tftp': '📡',
+        'nginx-access': '🌐',
+        'nginx-error': '🔴',
+        'system': '⚙️',
+        'other': '📄'
+    };
+
+    return icons[cat] || icons['other'];
+}
+
+function formatDateTime(isoString) {
+    if (!isoString) return '—';
+    try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return '—';
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    } catch (error) {
+        return '—';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
+function toggleAutoRefresh() {
+    const btn = document.getElementById('autoRefreshBtn');
+
+    if (autoRefreshInterval) {
+        stopAutoRefresh();
+        btn.textContent = '🔄 Auto-Refresh: OFF';
+        btn.className = 'btn btn-header';
+    } else {
+        startAutoRefresh();
+        btn.textContent = '🔄 Auto-Refresh: ON';
+        btn.className = 'btn btn-success';
+    }
+}
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) return;
+    autoRefreshInterval = setInterval(refreshLogs, 5000);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Server Error{% endblock %}
+{% block container_width %}600px{% endblock %}
+
+{% block header %}
+<div style="text-align: center; padding: 60px 20px;">
+    <h1 style="font-size: 72px; margin-bottom: 20px;">500</h1>
+    <h2 style="color: #666; font-size: 24px; margin-bottom: 30px;">Internal Server Error</h2>
+    <p style="color: #999; margin-bottom: 10px;">Something went wrong on our end.</p>
+    <p style="color: #999; margin-bottom: 30px;">Please try again later or contact the administrator.</p>
+    <div>
+        <a href="/" class="btn btn-primary">Go to Dashboard</a>
+        <a href="javascript:location.reload()" class="btn btn-secondary">Reload Page</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}{% endblock %}

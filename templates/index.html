@@ -1,0 +1,2242 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thin-Server ThinClient Manager v{{ app_version }}</title>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* STATS */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f9fafb;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 8px;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ACTION BUTTONS */
+        .action-buttons {
+            padding: 20px 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        /* TABLE */
+        .table-container {
+            padding: 0 30px 30px 30px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            min-width: 1000px; /* Minimum width to trigger horizontal scroll */
+        }
+
+        /* Actions column - prevent button wrapping */
+        td:last-child, th:last-child {
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        /* Compact button spacing in table */
+        td .btn-sm {
+            margin: 0 2px;
+        }
+
+        thead {
+            background: #f9fafb;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-booting {
+            background: #fef3c7;
+            color: #92400e;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .status-never {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            max-width: 600px;
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .close {
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+            line-height: 1;
+        }
+
+        .close:hover {
+            transform: scale(1.2);
+        }
+
+        .modal-body {
+            padding: 30px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #e5e7eb;
+            text-align: right;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* FORM */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group-inline {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        /* LOGS MODAL */
+        .logs-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 12px;
+        }
+
+        .logs-filters > div {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .logs-filters label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 13px;
+        }
+
+        .logs-filters select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+            background: white;
+        }
+
+        .log-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .log-stat-card {
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .log-stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .log-stat-label {
+            font-size: 11px;
+            opacity: 0.9;
+            text-transform: uppercase;
+        }
+
+        .logs-table-wrapper {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+        }
+
+        .logs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .logs-table thead {
+            position: sticky;
+            top: 0;
+            background: #f9fafb;
+            z-index: 10;
+        }
+
+        .logs-table th {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #d1d5db;
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .logs-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+        }
+
+        .logs-table td.log-message {
+            max-width: 700px;
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: left;
+        }
+
+        .logs-table td.log-time {
+            white-space: nowrap;
+            min-width: 140px;
+            vertical-align: top;
+        }
+
+        .logs-table td {
+            vertical-align: top;
+        }
+
+        .logs-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .logs-table tbody tr:hover td.log-message {
+            background: #e5e7eb;
+        }
+
+        .log-level {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .log-level-info { background: #3b82f6; }
+        .log-level-warn { background: #f59e0b; }
+        .log-level-error { background: #ef4444; }
+
+        .log-category {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .log-message {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #374151;
+            word-break: break-word;
+        }
+
+        /* LOG CATEGORY BADGES */
+        .log-categories {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 24px;
+            border-radius: 12px;
+            min-width: 120px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-weight: 600;
+            user-select: none;
+        }
+
+        .category-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .category-badge.active {
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+
+        .category-count {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .category-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Category Colors */
+        .cat-all { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .cat-xserver { background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%); }
+        .cat-freerdp { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .cat-network { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .cat-ntp { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .cat-boot { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .cat-print { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+        .cat-system { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+        .cat-other { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+
+        /* SPINNER */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #374151;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* ALERT */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        /* REFRESH SPINNER */
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        #refreshSpinner {
+            animation: rotate 1s linear infinite;
+            font-size: 18px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 0;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                overflow-x: scroll;
+            }
+
+            .modal-content {
+                margin: 5% 10px;
+                max-width: none;
+            }
+
+            .form-group-inline {
+                grid-template-columns: 1fr;
+            }
+
+            .logs-filters {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- HEADER -->
+    <div class="header">
+        <h1>🖥️ Thin-Server ThinClient Manager v{{ app_version }}</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openBulkEditModal()" title="Edit multiple clients at once">
+                📝 Bulk Edit
+            </button>
+            <button class="btn btn-success" id="autoRefreshBtn" onclick="toggleDashboardRefresh()" title="Toggle auto-refresh (5s)">
+                🔄 Auto-Refresh: ON
+            </button>
+            <button class="btn btn-warning" onclick="window.location.href='/admin'">⚙️ Admin</button>
+            <button class="btn btn-secondary" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-value" id="stat-total">{{ stats.total }}</div>
+            <div class="stat-label">Total Clients</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-online" style="color: #10b981;">{{ stats.online }}</div>
+            <div class="stat-label">Online</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-booting" style="color: #f59e0b;">{{ stats.booting }}</div>
+            <div class="stat-label">Booting</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="stat-offline" style="color: #6b7280;">{{ stats.offline }}</div>
+            <div class="stat-label">Offline</div>
+        </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="action-buttons">
+        <button class="btn btn-primary" onclick="openAddClientModal()">➕ Add Client</button>
+        <button class="btn btn-success" onclick="window.location.href='/server-logs'">📋 Server Logs</button>
+    </div>
+
+    <!-- CLIENTS TABLE -->
+    <div class="table-container">
+        {% if clients %}
+        <table>
+            <thead>
+                <tr>
+                    <th>MAC Address</th>
+                    <th>Hostname</th>
+                    <th>Location</th>
+                    <th>IP Address</th>
+                    <th>RDP Server</th>
+                    <th>Last Boot</th>
+                    <th>Boots</th>
+                    <th>Status</th>
+                    <th>Features</th>
+                    <th>Metrics</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in clients %}
+                <tr>
+                    <td><code>{{ c.mac }}</code></td>
+                    <td>{{ c.hostname or '—' }}</td>
+                    <td>{{ c.location or '—' }}</td>
+                    <td><code style="color: #3b82f6;">{{ c.last_ip or '—' }}</code></td>
+                    <td>{{ c.rdp_server or stats.rds_server }}</td>
+                    <td>{{ c.last_boot.strftime('%Y-%m-%d %H:%M') if c.last_boot else '—' }}</td>
+                    <td>{{ c.boot_count or 0 }}</td>
+                    <td>
+                        <span class="status-badge status-{{ c.status if c.status in ['online', 'offline', 'booting'] else 'never' }}">
+                            {% if c.status == 'booting' %}
+                                🔄 BOOTING
+                            {% elif c.status == 'online' %}
+                                ✅ ONLINE
+                            {% elif c.status == 'offline' %}
+                                ⭕ OFFLINE
+                            {% else %}
+                                ⏸️ NEVER BOOTED
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if c.sound_enabled %}
+                            <i class="fas fa-volume-up text-success" title="Sound enabled"></i>
+                        {% else %}
+                            <i class="fas fa-volume-mute text-muted" title="Sound disabled"></i>
+                        {% endif %}
+
+                        {% if c.printer_enabled %}
+                            <i class="fas fa-print text-success" title="Printer enabled"></i>
+                        {% else %}
+                            <i class="fas fa-print text-muted" title="Printer disabled"></i>
+                        {% endif %}
+
+                        {% if c.usb_redirect %}
+                            <i class="fas fa-usb text-success" title="USB enabled"></i>
+                        {% else %}
+                            <i class="fas fa-usb text-muted" title="USB disabled"></i>
+                        {% endif %}
+
+                        {% if c.clipboard_enabled %}
+                            <i class="fas fa-clipboard text-success" title="Clipboard enabled"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.status == 'online' and c.cpu_usage %}
+                            <div class="small">
+                                <div>CPU: {{ "%.1f"|format(c.cpu_usage) }}%</div>
+                                <div>RAM: {{ "%.1f"|format(c.mem_usage) }}%</div>
+                            </div>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="editClient({{ c.id }})">Edit</button>
+                        <button class="btn btn-success btn-sm" onclick="showLogsModal({{ c.id }})">📋 Logs</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteClient({{ c.id }}, '{{ c.mac }}')">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+            <h3>No Clients Yet</h3>
+            <p>Add your first thin client to get started</p>
+            <button class="btn btn-primary" onclick="openAddClientModal()">➕ Add First Client</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// ============================================
+// GLOBAL VARIABLES
+// ============================================
+let currentClientId = null;
+let currentCategory = 'all';
+let currentLevel = 'all';
+let autoRefreshInterval = null;
+
+// ============================================
+// LOGOUT
+// ============================================
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        window.location.href = '/logout';
+    }
+}
+
+// ============================================
+// ADD CLIENT MODAL
+// ============================================
+function openAddClientModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'addClientModal';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Add New Client</h2>
+                <span class="close" onclick="closeModal('addClientModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addClientForm" onsubmit="addClient(event)">
+                    <div class="form-group">
+                        <label>MAC Address *</label>
+                        <input type="text" name="mac" placeholder="00:11:22:33:44:55" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Hostname</label>
+                        <input type="text" name="hostname" placeholder="TC-001">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" name="location" placeholder="Office 101">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>RDP Server</label>
+                        <input type="text" name="rdp_server" placeholder="rds.local" value="{{ stats.rds_server }}">
+                    </div>
+                    
+                    <div class="form-group-inline">
+                        <div class="form-group">
+                            <label>RDP Domain</label>
+                            <input type="text" name="rdp_domain" placeholder="DOMAIN">
+                        </div>
+                        <div class="form-group">
+                            <label>RDP Username</label>
+                            <input type="text" name="rdp_username" placeholder="user">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>RDP Password (optional)</label>
+                        <input type="password" name="rdp_password" placeholder="Leave empty for manual login">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Video Driver</label>
+                        <select name="video_driver" id="add_video_driver">
+                            <option value="autodetect">Auto-detect (Recommended)</option>
+                            <option value="intel">Intel HD/Iris Graphics</option>
+                            <option value="amd">AMD Ryzen APU (Radeon Graphics)</option>
+                            <option value="vmware">VMware ESXi/Workstation</option>
+                            <option value="universal">Universal (Works on all hardware)</option>
+                        </select>
+                        <small style="color: #6b7280; font-size: 12px; display: block; margin-top: 5px;">
+                            Initramfs: <span id="add_initramfs_info" style="font-weight: 600;">initrd-minimal.img</span>
+                            <span id="add_initramfs_size"></span>
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Audio & Video</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="sound_enabled" id="sound" checked>
+                            <label for="sound">🔊 Enable Sound</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="multimon_enabled" id="multimon">
+                            <label for="multimon">🖥️ Multi-Monitor</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Printers</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="printer_enabled" id="printer">
+                            <label for="printer">🖨️ Printer Redirect</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="print_server_enabled" id="printserver">
+                            <label for="printserver">🖨️ Print Server (p910nd)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>USB & Storage</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="usb_redirect" id="usb">
+                            <label for="usb">🔌 USB Redirect</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="drives_redirect" id="drives">
+                            <label for="drives">💾 Drive Redirect</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Clipboard & Performance</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="clipboard_enabled" id="clipboard" checked>
+                            <label for="clipboard">📋 Clipboard Sharing</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="compression_enabled" id="compression" checked>
+                            <label for="compression">⚡ Network Compression</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Diagnostics</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="ssh_enabled" id="add_ssh" onchange="document.getElementById('add_ssh_password_group').style.display = this.checked ? 'block' : 'none'">
+                            <label for="add_ssh">💻 Enable SSH</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="debug_mode" id="add_debug">
+                            <label for="add_debug">🐛 Debug Mode</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="add_ssh_password_group" style="display: none">
+                        <label>SSH Password</label>
+                        <input type="text" name="ssh_password" value="thinclient2025" placeholder="thinclient2025">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addClientModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="addClientForm">Add Client</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'block';
+}
+
+async function addClient(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    const data = {
+        mac: formData.get('mac'),
+        hostname: formData.get('hostname'),
+        location: formData.get('location'),
+        rdp_server: formData.get('rdp_server'),
+        rdp_domain: formData.get('rdp_domain'),
+        rdp_username: formData.get('rdp_username'),
+        rdp_password: formData.get('rdp_password'),
+        video_driver: formData.get('video_driver'),
+        sound_enabled: formData.get('sound_enabled') === 'on',
+        printer_enabled: formData.get('printer_enabled') === 'on',
+        usb_redirect: formData.get('usb_redirect') === 'on',
+        print_server_enabled: formData.get('print_server_enabled') === 'on',
+        clipboard_enabled: formData.get('clipboard_enabled') === 'on',
+        drives_redirect: formData.get('drives_redirect') === 'on',
+        compression_enabled: formData.get('compression_enabled') === 'on',
+        multimon_enabled: formData.get('multimon_enabled') === 'on',
+        ssh_enabled: formData.get('ssh_enabled') === 'on',
+        ssh_password: formData.get('ssh_password') || 'thinclient2025',
+        debug_mode: formData.get('debug_mode') === 'on'
+    };
+    
+    try {
+        const response = await fetch('/api/clients', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            closeModal('addClientModal');
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + (error.error || 'Failed to add client'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+// ============================================
+// EDIT CLIENT
+// ============================================
+async function editClient(clientId) {
+    try {
+        const response = await fetch(`/api/clients/${clientId}`);
+        const client = await response.json();
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'editClientModal';
+        
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>✏️ Edit Client: ${client.mac}</h2>
+                    <span class="close" onclick="closeModal('editClientModal')">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="editClientForm" onsubmit="updateClient(event, ${clientId})">
+                        <div class="form-group">
+                            <label>MAC Address</label>
+                            <input type="text" value="${client.mac}" readonly style="background: #f3f4f6;">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Hostname</label>
+                            <input type="text" name="hostname" value="${client.hostname || ''}" placeholder="TC-001">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" name="location" value="${client.location || ''}" placeholder="Office 101">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>RDP Server</label>
+                            <input type="text" name="rdp_server" value="${client.rdp_server || ''}" placeholder="rds.local">
+                        </div>
+                        
+                        <div class="form-group-inline">
+                            <div class="form-group">
+                                <label>RDP Domain</label>
+                                <input type="text" name="rdp_domain" value="${client.rdp_domain || ''}" placeholder="DOMAIN">
+                            </div>
+                            <div class="form-group">
+                                <label>RDP Username</label>
+                                <input type="text" name="rdp_username" value="${client.rdp_username || ''}" placeholder="user">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>RDP Password</label>
+                            <input type="password" name="rdp_password" placeholder="Leave empty to keep current">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Video Driver</label>
+                            <select name="video_driver" id="edit_video_driver">
+                                <option value="autodetect" ${client.video_driver === 'autodetect' || client.video_driver === 'auto' || !client.video_driver ? 'selected' : ''}>Auto-detect (Recommended)</option>
+                                <option value="intel" ${client.video_driver === 'intel' ? 'selected' : ''}>Intel HD/Iris Graphics</option>
+                                <option value="amd" ${client.video_driver === 'amd' ? 'selected' : ''}>AMD Ryzen APU (Radeon Graphics)</option>
+                                <option value="vmware" ${client.video_driver === 'vmware' ? 'selected' : ''}>VMware ESXi/Workstation</option>
+                                <option value="universal" ${client.video_driver === 'universal' || client.video_driver === 'modesetting' ? 'selected' : ''}>Universal (Works on all hardware)</option>
+                            </select>
+                            <small style="color: #6b7280; font-size: 12px; display: block; margin-top: 5px;">
+                                Initramfs: <span id="edit_initramfs_info" style="font-weight: 600;">initrd-minimal.img</span>
+                                <span id="edit_initramfs_size"></span>
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Audio & Video</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="sound_enabled" id="edit_sound" ${client.sound_enabled ? 'checked' : ''}>
+                                <label for="edit_sound">🔊 Enable Sound</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="multimon_enabled" id="edit_multimon" ${client.multimon_enabled ? 'checked' : ''}>
+                                <label for="edit_multimon">🖥️ Multi-Monitor</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Printers</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="printer_enabled" id="edit_printer" ${client.printer_enabled ? 'checked' : ''}>
+                                <label for="edit_printer">🖨️ Printer Redirect</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="print_server_enabled" id="edit_printserver" ${client.print_server_enabled ? 'checked' : ''}>
+                                <label for="edit_printserver">🖨️ Print Server (p910nd)</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>USB & Storage</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="usb_redirect" id="edit_usb" ${client.usb_redirect ? 'checked' : ''}>
+                                <label for="edit_usb">🔌 USB Redirect</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="drives_redirect" id="edit_drives" ${client.drives_redirect ? 'checked' : ''}>
+                                <label for="edit_drives">💾 Drive Redirect</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Clipboard & Performance</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="clipboard_enabled" id="edit_clipboard" ${client.clipboard_enabled ? 'checked' : ''}>
+                                <label for="edit_clipboard">📋 Clipboard Sharing</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="compression_enabled" id="edit_compression" ${client.compression_enabled ? 'checked' : ''}>
+                                <label for="edit_compression">⚡ Network Compression</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Diagnostics</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="ssh_enabled" id="edit_ssh" ${client.ssh_enabled ? 'checked' : ''} onchange="document.getElementById('ssh_password_group').style.display = this.checked ? 'block' : 'none'">
+                                <label for="edit_ssh">💻 Enable SSH</label>
+                            </div>
+                            <div class="checkbox-group">
+                                <input type="checkbox" name="debug_mode" id="edit_debug" ${client.debug_mode ? 'checked' : ''}>
+                                <label for="edit_debug">🐛 Debug Mode</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="ssh_password_group" style="display: ${client.ssh_enabled ? 'block' : 'none'}">
+                            <label>SSH Password</label>
+                            <input type="text" name="ssh_password" value="${client.ssh_password || 'thinclient2025'}" placeholder="thinclient2025">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('editClientModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('editClientForm').dispatchEvent(new Event('submit'))">Save Changes</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        modal.style.display = 'block';
+
+        // Setup initramfs info update for edit modal
+        setTimeout(() => setupEditInitramfsUpdate(), 100);
+
+    } catch (error) {
+        alert('Error loading client: ' + error.message);
+    }
+}
+
+async function updateClient(event, clientId) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    const data = {
+        hostname: formData.get('hostname'),
+        location: formData.get('location'),
+        rdp_server: formData.get('rdp_server'),
+        rdp_domain: formData.get('rdp_domain'),
+        rdp_username: formData.get('rdp_username'),
+        video_driver: formData.get('video_driver'),
+        sound_enabled: formData.get('sound_enabled') === 'on',
+        printer_enabled: formData.get('printer_enabled') === 'on',
+        usb_redirect: formData.get('usb_redirect') === 'on',
+        print_server_enabled: formData.get('print_server_enabled') === 'on',
+        clipboard_enabled: formData.get('clipboard_enabled') === 'on',
+        drives_redirect: formData.get('drives_redirect') === 'on',
+        compression_enabled: formData.get('compression_enabled') === 'on',
+        multimon_enabled: formData.get('multimon_enabled') === 'on',
+        ssh_enabled: formData.get('ssh_enabled') === 'on',
+        ssh_password: formData.get('ssh_password') || 'thinclient2025',
+        debug_mode: formData.get('debug_mode') === 'on'
+    };
+    
+    const password = formData.get('rdp_password');
+    if (password) {
+        data.rdp_password = password;
+    }
+    
+    try {
+        const response = await fetch(`/api/clients/${clientId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            closeModal('editClientModal');
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + (error.error || 'Failed to update client'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+// ============================================
+// DELETE CLIENT
+// ============================================
+async function deleteClient(clientId, mac) {
+    if (!confirm(`Are you sure you want to delete client ${mac}?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/clients/${clientId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + (error.error || 'Failed to delete client'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+// ============================================
+// LOGS MODAL З КАТЕГОРІЯМИ - ПОВНА ВЕРСІЯ
+// ============================================
+
+// Variables already declared at top of script section
+
+function showLogsModal(clientId) {
+    currentClientId = clientId;
+    currentCategory = 'all';
+    currentLevel = 'all';
+    
+    const modal = document.createElement('div');
+    modal.id = 'logsModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="width: 95%; max-width: 1400px;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>📋 Client Logs</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="btn btn-danger" onclick="clearClientLogs()" style="font-size: 14px; padding: 8px 16px;">
+                        🗑️ Clear Logs
+                    </button>
+                    <button class="btn-close" onclick="closeLogsModal()">×</button>
+                </div>
+            </div>
+
+            <!-- CLIENT INFO PANEL -->
+            <div id="clientInfoPanel" style="padding: 20px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-bottom: 2px solid #d1d5db;">
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div style="font-size: 18px; font-weight: 600; color: #374151;">
+                        <span style="color: #6b7280;">Loading client info...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <!-- FILTERS -->
+                <div class="logs-filters">
+                    <div>
+                        <label>⏰ Time Range:</label>
+                        <select id="timeFilter">
+                            <option value="1">Last Hour</option>
+                            <option value="6">Last 6 Hours</option>
+                            <option value="24" selected>Last 24 Hours</option>
+                            <option value="72">Last 3 Days</option>
+                            <option value="168">Last Week</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label>📊 Level:</label>
+                        <select id="levelFilter">
+                            <option value="all">All Levels</option>
+                            <option value="INFO">INFO</option>
+                            <option value="WARN">WARN</option>
+                            <option value="ERROR">ERROR</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label>🏷️ Category:</label>
+                        <select id="categoryFilter">
+                            <option value="all">All Categories</option>
+                            <option value="xserver">🖥️ X Server</option>
+                            <option value="freerdp">🖱️ FreeRDP</option>
+                            <option value="network">🌐 Network</option>
+                            <option value="ntp">⏰ NTP</option>
+                            <option value="boot">🚀 Boot</option>
+                            <option value="print">🖨️ Print</option>
+                            <option value="system">⚙️ System</option>
+                            <option value="other">📄 Other</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; align-items: flex-end;">
+                        <button onclick="refreshLogs()" class="btn btn-primary" style="width: 100%;">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    
+                    <div style="display: flex; align-items: flex-end;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+                            <span>Auto-refresh (5s)</span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label>📥 Export:</label>
+                        <select id="exportFormat" style="margin-bottom: 4px;">
+                            <option value="csv">CSV</option>
+                            <option value="json">JSON</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: flex-end;">
+                        <button onclick="exportClientLogs()" class="btn btn-secondary" style="width: 100%;">
+                            💾 Export
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- CATEGORY BADGES -->
+                <div class="log-categories" id="logCategories">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- LOGS TABLE -->
+                <div class="logs-table-wrapper">
+                    <table class="logs-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 180px;">Time</th>
+                                <th style="width: 80px;">Level</th>
+                                <th style="width: 120px;">Category</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 40px;">
+                                    <div class="spinner"></div>
+                                    <div style="margin-top: 10px;">Loading logs...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeLogsModal()">Close</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'block';
+
+    // Load client info and logs
+    loadClientInfo();
+    refreshLogs();
+}
+
+async function loadClientInfo() {
+    const panel = document.getElementById('clientInfoPanel');
+    if (!panel) return;
+
+    try {
+        const response = await fetch(`/api/clients/${currentClientId}`);
+        if (!response.ok) throw new Error('Failed to fetch client info');
+
+        const client = await response.json();
+
+        panel.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 30px; flex-wrap: wrap;">
+                <div style="font-size: 18px; font-weight: 600; color: #374151;">
+                    <span style="color: #667eea;">🖥️ ${client.hostname || 'Unknown'}</span>
+                </div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="background: white; padding: 8px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <span style="color: #6b7280; font-size: 12px; font-weight: 500;">MAC ADDRESS</span>
+                        <div style="font-family: monospace; font-weight: 600; color: #374151;">${client.mac}</div>
+                    </div>
+                    <div style="background: white; padding: 8px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <span style="color: #6b7280; font-size: 12px; font-weight: 500;">IP ADDRESS</span>
+                        <div style="font-family: monospace; font-weight: 600; color: #3b82f6;">${client.last_ip || '—'}</div>
+                    </div>
+                    <div style="background: white; padding: 8px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <span style="color: #6b7280; font-size: 12px; font-weight: 500;">LOCATION</span>
+                        <div style="font-weight: 600; color: #374151;">${client.location || '—'}</div>
+                    </div>
+                    <div style="background: white; padding: 8px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <span style="color: #6b7280; font-size: 12px; font-weight: 500;">STATUS</span>
+                        <div style="font-weight: 600; color: ${client.status === 'online' ? '#10b981' : client.status === 'booting' ? '#f59e0b' : '#6b7280'};">
+                            ${client.status === 'online' ? '✅ ONLINE' : client.status === 'booting' ? '🔄 BOOTING' : '⭕ OFFLINE'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error loading client info:', error);
+        panel.innerHTML = `
+            <div style="color: #ef4444;">
+                ⚠️ Failed to load client information
+            </div>
+        `;
+    }
+}
+
+async function refreshLogs() {
+    if (!currentClientId) return;
+
+    const tbody = document.getElementById('logsTableBody');
+    const categoriesDiv = document.getElementById('logCategories');
+    
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="4" style="text-align: center; padding: 40px;">
+                <div class="spinner"></div>
+                <div style="margin-top: 10px;">Loading logs...</div>
+            </td>
+        </tr>
+    `;
+    
+    try {
+        const hours = document.getElementById('timeFilter')?.value || 24;
+        const level = document.getElementById('levelFilter')?.value || 'all';
+        const category = document.getElementById('categoryFilter')?.value || 'all';
+        
+        currentCategory = category;
+        currentLevel = level;
+        
+        let url = `/api/clients/${currentClientId}/logs?hours=${hours}&limit=500`;
+        if (level !== 'all') url += `&level=${level}`;
+        if (category !== 'all') url += `&category=${category}`;
+        
+        console.log('Fetching logs from:', url);
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const logs = await response.json();
+        
+        console.log('Logs received:', logs.length);
+        
+        // Fetch categories for stats
+        const categoriesResponse = await fetch(`/api/logs/categories?hours=${hours}&client_id=${currentClientId}`);
+        if (categoriesResponse.ok) {
+            const categoriesData = await categoriesResponse.json();
+            displayStats(categoriesData.categories || []);
+        }
+        
+        if (logs.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px; color: #6b7280;">
+                        🔭 No logs found
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = logs.map(log => {
+            // ✅ ЗАХИСТ ВІД UNDEFINED/NULL
+            const timestamp = formatDateTime(log.timestamp);
+            const level = String(log.level || 'INFO');
+            const category = String(log.category || 'other');
+            const message = String(log.message || '');
+
+            return `
+                <tr>
+                    <td class="log-time">
+                        ${timestamp}
+                    </td>
+                    <td>
+                        <span class="log-level log-level-${level.toLowerCase()}">
+                            ${level}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="log-category" style="background: ${getCategoryColor(category) || '#6b7280'};">
+                            ${getCategoryIcon(category)} ${category ? category.toUpperCase() : 'OTHER'}
+                        </span>
+                    </td>
+                    <td class="log-message">
+                        ${escapeHtml(message)}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Error loading logs:', error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 40px; color: #ef4444;">
+                    ✗ Error loading logs: ${escapeHtml(error.message)}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function displayStats(categories) {
+    const categoriesDiv = document.getElementById('logCategories');
+
+    // ✅ ЗАХИСТ ВІД UNDEFINED
+    if (!categories || categories.length === 0) {
+        categoriesDiv.innerHTML = '<div style="text-align: center; padding: 10px; color: #6b7280;">No statistics available</div>';
+        return;
+    }
+
+    // Create map of categories first
+    const categoryMap = {};
+    categories.forEach(cat => {
+        const id = (cat.id || 'other').toString().toLowerCase();
+        categoryMap[id] = parseInt(cat.count) || 0;
+    });
+
+    // Get total from API's 'all' category, or calculate from individual categories
+    const totalCount = categoryMap['all'] ||
+        categories.filter(c => c.id !== 'all').reduce((sum, cat) => sum + (parseInt(cat.count) || 0), 0);
+
+    // Define category order and mapping
+    const categoryOrder = ['all', 'xserver', 'freerdp', 'network', 'ntp', 'boot', 'print', 'system', 'other'];
+    const categoryLabels = {
+        'all': 'ALL',
+        'xserver': 'XSERVER',
+        'freerdp': 'FREERDP',
+        'network': 'NETWORK',
+        'ntp': 'NTP',
+        'boot': 'BOOT',
+        'print': 'PRINT',
+        'system': 'SYSTEM',
+        'other': 'OTHER'
+    };
+
+    // Build HTML for all categories in order
+    categoriesDiv.innerHTML = categoryOrder.map(catId => {
+        const count = catId === 'all' ? totalCount : (categoryMap[catId] || 0);
+        const label = categoryLabels[catId] || catId.toUpperCase();
+        const icon = getCategoryIcon(catId);
+        const isActive = currentCategory === catId;
+
+        return `
+            <div class="category-badge cat-${catId} ${isActive ? 'active' : ''}"
+                 onclick="filterByCategory('${catId}')"
+                 title="Click to filter by ${label}">
+                <div class="category-count">${count}</div>
+                <div class="category-label">${icon} ${label}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getCategoryColor(category) {
+    // ✅ ЗАХИСТ ВІД UNDEFINED
+    const cat = (category || 'other').toString().toLowerCase();
+
+    const colors = {
+        'all': '#6b7280',
+        'xserver': '#8b5cf6',
+        'freerdp': '#3b82f6',
+        'network': '#10b981',
+        'ntp': '#f59e0b',
+        'boot': '#ef4444',
+        'print': '#ec4899',
+        'system': '#6366f1',
+        'other': '#64748b'
+    };
+
+    return colors[cat] || colors['other'];
+}
+
+function getCategoryIcon(category) {
+    // ✅ ЗАХИСТ ВІД UNDEFINED
+    const cat = (category || 'other').toString().toLowerCase();
+
+    const icons = {
+        'all': '📊',
+        'xserver': '🖥️',
+        'freerdp': '🖱️',
+        'network': '🌐',
+        'ntp': '⏰',
+        'boot': '🚀',
+        'print': '🖨️',
+        'system': '⚙️',
+        'other': '📄'
+    };
+
+    return icons[cat] || icons['other'];
+}
+
+// ============================================
+// CATEGORY FILTERING
+// ============================================
+function filterByCategory(category) {
+    console.log('Filtering by category:', category);
+
+    // Update currentCategory
+    currentCategory = category;
+
+    // Update dropdown to match
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+        categoryFilter.value = category;
+    }
+
+    // Refresh logs with new filter
+    refreshLogs();
+}
+
+// ============================================
+// CLEAR CLIENT LOGS
+// ============================================
+async function clearClientLogs() {
+    if (!currentClientId) return;
+
+    const confirmed = confirm('Are you sure you want to clear all logs for this client? This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`/api/clients/${currentClientId}/logs/clear`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ period: 'all' })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        alert(`✓ Successfully cleared ${result.deleted_count || 0} logs`);
+
+        // Refresh logs display
+        refreshLogs();
+
+    } catch (error) {
+        console.error('Failed to clear logs:', error);
+        alert(`✗ Failed to clear logs: ${error.message}`);
+    }
+}
+
+function formatDateTime(isoString) {
+    if (!isoString) return '—';
+    try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return '—';
+        
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    } catch (error) {
+        return '—';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
+function exportClientLogs() {
+    if (!currentClientId) {
+        alert('❌ No client selected');
+        return;
+    }
+
+    try {
+        const hours = document.getElementById('timeFilter')?.value || 24;
+        const level = document.getElementById('levelFilter')?.value || 'all';
+        const category = document.getElementById('categoryFilter')?.value || 'all';
+        const format = document.getElementById('exportFormat')?.value || 'csv';
+
+        // Build export URL with current filters
+        let url = `/api/clients/${currentClientId}/logs/export?hours=${hours}&format=${format}`;
+        if (level !== 'all') url += `&level=${level}`;
+        if (category !== 'all') url += `&category=${category}`;
+
+        console.log('Exporting logs from:', url);
+
+        // Open URL in new window to trigger download
+        window.open(url, '_blank');
+
+    } catch (error) {
+        console.error('Error exporting logs:', error);
+        alert('❌ Error exporting logs: ' + error.message);
+    }
+}
+
+function toggleAutoRefresh() {
+    const checkbox = document.getElementById('autoRefresh');
+    
+    if (checkbox && checkbox.checked) {
+        autoRefreshInterval = setInterval(refreshLogs, 5000);
+    } else {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+        }
+    }
+}
+
+function closeLogsModal() {
+    const modal = document.getElementById('logsModal');
+    if (modal) {
+        modal.remove();
+    }
+    
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+    
+    currentClientId = null;
+    currentCategory = 'all';
+    currentLevel = 'all';
+}
+
+
+// ============================================
+// MODAL HELPERS
+// ============================================
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Close modal on outside click
+window.onclick = function(event) {
+    if (event.target.className === 'modal') {
+        const logsModal = document.getElementById('logsModal');
+        if (logsModal && event.target === logsModal) {
+            closeLogsModal();
+        }
+    }
+}
+
+// ============================================
+// AUTO-REFRESH DASHBOARD
+// ============================================
+let dashboardRefreshInterval = null;
+let isRefreshing = false;
+
+async function refreshDashboard() {
+    if (isRefreshing) return;
+    isRefreshing = true;
+
+    try {
+        // Fetch stats
+        const statsResponse = await fetch('/api/clients/stats');
+        if (statsResponse.ok) {
+            const stats = await statsResponse.json();
+
+            // Update stats with animation
+            updateStatValue('stat-total', stats.total);
+            updateStatValue('stat-online', stats.online);
+            updateStatValue('stat-booting', stats.booting);
+            updateStatValue('stat-offline', stats.offline);
+        }
+
+        // Fetch clients list
+        const clientsResponse = await fetch('/api/clients');
+        if (clientsResponse.ok) {
+            const clients = await clientsResponse.json();
+            updateClientsTable(clients);
+        }
+
+    } catch (error) {
+        console.error('Dashboard refresh error:', error);
+    } finally {
+        isRefreshing = false;
+    }
+}
+
+function updateStatValue(elementId, newValue) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    const oldValue = parseInt(element.textContent) || 0;
+    if (oldValue !== newValue) {
+        element.style.transform = 'scale(1.2)';
+        element.textContent = newValue;
+        setTimeout(() => {
+            element.style.transform = 'scale(1)';
+        }, 200);
+    }
+}
+
+function updateClientsTable(clients) {
+    const tbody = document.querySelector('table tbody');
+    if (!tbody || clients.length === 0) return;
+
+    // Build new table HTML
+    const newHTML = clients.map(c => {
+        const lastBoot = c.last_boot ? new Date(c.last_boot).toLocaleString('uk-UA', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).replace(',', '') : '—';
+
+        let statusClass = 'never';
+        let statusText = '⏸️ NEVER BOOTED';
+
+        if (c.status === 'booting') {
+            statusClass = 'booting';
+            statusText = '🔄 BOOTING';
+        } else if (c.status === 'online') {
+            statusClass = 'online';
+            statusText = '✅ ONLINE';
+        } else if (c.status === 'offline') {
+            statusClass = 'offline';
+            statusText = '⭕ OFFLINE';
+        }
+
+        return `
+            <tr data-client-id="${c.id}">
+                <td><code>${c.mac}</code></td>
+                <td>${c.hostname || '—'}</td>
+                <td>${c.location || '—'}</td>
+                <td><code style="color: #3b82f6;">${c.last_ip || '—'}</code></td>
+                <td>${c.rdp_server || '{{ stats.rds_server }}'}</td>
+                <td>${lastBoot}</td>
+                <td>${c.boot_count || 0}</td>
+                <td>
+                    <span class="status-badge status-${statusClass}">
+                        ${statusText}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-primary btn-sm" onclick="editClient(${c.id})">Edit</button>
+                    <button class="btn btn-success btn-sm" onclick="showLogsModal(${c.id})">📋 Logs</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteClient(${c.id}, '${c.mac}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Only update if changed (avoid flicker)
+    if (tbody.innerHTML !== newHTML) {
+        tbody.innerHTML = newHTML;
+    }
+}
+
+function startAutoRefresh() {
+    if (dashboardRefreshInterval) return;
+
+    dashboardRefreshInterval = setInterval(refreshDashboard, 5000);
+    console.log('✅ Auto-refresh enabled (5s interval)');
+}
+
+function stopAutoRefresh() {
+    if (dashboardRefreshInterval) {
+        clearInterval(dashboardRefreshInterval);
+        dashboardRefreshInterval = null;
+        console.log('⏸️ Auto-refresh disabled');
+    }
+}
+
+function toggleDashboardRefresh() {
+    const btn = document.getElementById('autoRefreshBtn');
+
+    if (dashboardRefreshInterval) {
+        stopAutoRefresh();
+        btn.textContent = '🔄 Auto-Refresh: OFF';
+        btn.className = 'btn btn-secondary';
+    } else {
+        startAutoRefresh();
+        btn.textContent = '🔄 Auto-Refresh: ON';
+        btn.className = 'btn btn-success';
+    }
+}
+
+// Start auto-refresh on page load
+window.addEventListener('DOMContentLoaded', () => {
+    startAutoRefresh();
+    console.log('🚀 Dashboard loaded with auto-refresh');
+});
+
+// Stop refresh when leaving page
+window.addEventListener('beforeunload', () => {
+    stopAutoRefresh();
+});
+</script>
+
+<!-- ============================================ -->
+<!-- BULK EDIT MODAL -->
+<!-- ============================================ -->
+<div class="modal" id="bulkEditModal" style="display: none;">
+    <div class="modal-overlay" onclick="closeBulkEditModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Bulk Edit Clients</h3>
+            <button class="modal-close" onclick="closeBulkEditModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <p>Apply settings to <strong><span id="selectedCount">0</span></strong> selected clients:</p>
+
+            <div class="form-group">
+                <label style="font-weight: 600; margin-bottom: 10px; display: block;">Audio & Video</label>
+                <div style="margin-bottom: 8px;">
+                    <input type="checkbox" id="bulk_sound" style="margin-right: 8px;">
+                    <label for="bulk_sound">Enable Sound</label>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <input type="checkbox" id="bulk_multimon" style="margin-right: 8px;">
+                    <label for="bulk_multimon">Enable Multi-Monitor</label>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <label style="font-weight: 600; margin-bottom: 10px; display: block;">Peripherals</label>
+                <div style="margin-bottom: 8px;">
+                    <input type="checkbox" id="bulk_printer" style="margin-right: 8px;">
+                    <label for="bulk_printer">Enable Printer</label>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <input type="checkbox" id="bulk_usb" style="margin-right: 8px;">
+                    <label for="bulk_usb">Enable USB Redirection</label>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <input type="checkbox" id="bulk_clipboard" style="margin-right: 8px;">
+                    <label for="bulk_clipboard">Enable Clipboard</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeBulkEditModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="applyBulkEdit()">Apply Changes</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: #374151;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.form-group label {
+    font-size: 14px;
+}
+</style>
+
+<script>
+// Bulk edit functions
+function openBulkEditModal() {
+    const selectedCheckboxes = document.querySelectorAll('.client-checkbox:checked');
+    const count = selectedCheckboxes.length;
+
+    if (count === 0) {
+        alert('Please select at least one client');
+        return;
+    }
+
+    document.getElementById('selectedCount').textContent = count;
+    document.getElementById('bulkEditModal').style.display = 'flex';
+}
+
+function closeBulkEditModal() {
+    document.getElementById('bulkEditModal').style.display = 'none';
+}
+
+function applyBulkEdit() {
+    const selectedCheckboxes = document.querySelectorAll('.client-checkbox:checked');
+    const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+    const settings = {
+        sound_enabled: document.getElementById('bulk_sound').checked,
+        multimon_enabled: document.getElementById('bulk_multimon').checked,
+        printer_enabled: document.getElementById('bulk_printer').checked,
+        usb_redirect: document.getElementById('bulk_usb').checked,
+        clipboard_enabled: document.getElementById('bulk_clipboard').checked
+    };
+
+    fetch('/api/clients/bulk-update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            client_ids: selectedIds,
+            settings: settings
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(`Settings applied to ${selectedIds.length} clients`);
+        closeBulkEditModal();
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Bulk update error:', error);
+        alert('Failed to update clients');
+    });
+}
+
+// Add checkboxes to client table rows
+document.addEventListener('DOMContentLoaded', () => {
+    // Add "Select All" checkbox to header
+    const thead = document.querySelector('table thead tr');
+    if (thead) {
+        const th = document.createElement('th');
+        th.innerHTML = '<input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">';
+        thead.insertBefore(th, thead.firstChild);
+    }
+
+    // Add checkbox to each row
+    const rows = document.querySelectorAll('table tbody tr');
+    rows.forEach((row, index) => {
+        const td = document.createElement('td');
+        const clientId = row.querySelector('.btn-primary')?.onclick?.toString().match(/\d+/)?.[0];
+        if (clientId) {
+            td.innerHTML = `<input type="checkbox" class="client-checkbox" value="${clientId}">`;
+            row.insertBefore(td, row.firstChild);
+        }
+    });
+});
+
+function toggleSelectAll(checkbox) {
+    document.querySelectorAll('.client-checkbox').forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+}
+
+// ============================================
+// INITRAMFS INFO AUTO-UPDATE
+// ============================================
+function updateInitramfsInfo(driver, targetInfoId, targetSizeId) {
+    fetch(`/api/initramfs/info/${driver}`)
+        .then(response => response.json())
+        .then(data => {
+            const infoSpan = document.getElementById(targetInfoId);
+            const sizeSpan = document.getElementById(targetSizeId);
+
+            if (infoSpan) {
+                infoSpan.textContent = data.filename;
+                infoSpan.style.color = data.exists ? '#10b981' : '#dc2626';
+            }
+
+            if (sizeSpan && data.exists) {
+                sizeSpan.textContent = `(${data.size_mb} MB)`;
+                sizeSpan.style.color = '#6b7280';
+            } else if (sizeSpan) {
+                sizeSpan.textContent = '(not built)';
+                sizeSpan.style.color = '#dc2626';
+            }
+        })
+        .catch(error => {
+            console.error('Failed to get initramfs info:', error);
+        });
+}
+
+// Update for Add Client modal
+document.addEventListener('DOMContentLoaded', () => {
+    const addVideoDriver = document.getElementById('add_video_driver');
+    if (addVideoDriver) {
+        addVideoDriver.addEventListener('change', function() {
+            updateInitramfsInfo(this.value, 'add_initramfs_info', 'add_initramfs_size');
+        });
+        // Initial load
+        updateInitramfsInfo(addVideoDriver.value, 'add_initramfs_info', 'add_initramfs_size');
+    }
+});
+
+// Update for Edit Client modal - will be set when modal opens
+function setupEditInitramfsUpdate() {
+    const editVideoDriver = document.getElementById('edit_video_driver');
+    if (editVideoDriver) {
+        editVideoDriver.addEventListener('change', function() {
+            updateInitramfsInfo(this.value, 'edit_initramfs_info', 'edit_initramfs_size');
+        });
+        // Initial load
+        updateInitramfsInfo(editVideoDriver.value, 'edit_initramfs_info', 'edit_initramfs_size');
+    }
+}
+</script>
+
+</body>
+</html>

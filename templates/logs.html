@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Logs - Thin-Server v{{ app_version }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h2 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .filters {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .form-control {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        select.form-control {
+            min-width: 150px;
+        }
+
+        input.form-control {
+            min-width: 200px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .table-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .table-danger {
+            background: #fee2e2 !important;
+        }
+
+        .table-warning {
+            background: #fef3c7 !important;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .badge-info {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .badge-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .pagination {
+            display: flex;
+            list-style: none;
+            gap: 10px;
+            padding: 20px 30px;
+            justify-content: center;
+        }
+
+        .page-item {
+            display: inline-block;
+        }
+
+        .page-link {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .page-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .page-item.active .page-link {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 30px;
+            color: #6b7280;
+        }
+
+        /* CATEGORY BADGES */
+        .log-categories {
+            display: flex;
+            gap: 10px;
+            margin: 20px 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 24px;
+            border-radius: 12px;
+            min-width: 120px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            font-weight: 600;
+            user-select: none;
+        }
+
+        .category-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .category-badge.active {
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+
+        .category-count {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .category-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Category Colors with Gradients */
+        .cat-all { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .cat-boot { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .cat-network { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+        .cat-freerdp { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .cat-xserver { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .cat-ntp { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+        .cat-print { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+        .cat-system { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+        .cat-other { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+
+        /* Improved Level Badges with Gradients */
+        .badge-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .badge-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .badge-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        /* Auto-refresh Controls */
+        .auto-refresh-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .auto-refresh-control input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .auto-refresh-control:hover {
+            background: #f9fafb;
+        }
+
+        /* Spinner for loading */
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- HEADER -->
+    <div class="header">
+        <h2><i class="fas fa-file-alt"></i> System Logs</h2>
+        <a href="/" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+        <form method="GET" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; width: 100%;">
+            <select name="level" class="form-control">
+                <option value="">All Levels</option>
+                <option value="ERROR" {% if request.args.get('level') == 'ERROR' %}selected{% endif %}>Errors</option>
+                <option value="WARN" {% if request.args.get('level') == 'WARN' %}selected{% endif %}>Warnings</option>
+                <option value="INFO" {% if request.args.get('level') == 'INFO' %}selected{% endif %}>Info</option>
+                <option value="DEBUG" {% if request.args.get('level') == 'DEBUG' %}selected{% endif %}>Debug</option>
+            </select>
+
+            <select name="category" class="form-control">
+                <option value="">All Categories</option>
+                <option value="boot" {% if request.args.get('category') == 'boot' %}selected{% endif %}>🚀 Boot</option>
+                <option value="network" {% if request.args.get('category') == 'network' %}selected{% endif %}>🌐 Network</option>
+                <option value="freerdp" {% if request.args.get('category') == 'freerdp' %}selected{% endif %}>🔗 RDP</option>
+                <option value="xserver" {% if request.args.get('category') == 'xserver' %}selected{% endif %}>🖥️ X Server</option>
+                <option value="ntp" {% if request.args.get('category') == 'ntp' %}selected{% endif %}>⏰ NTP</option>
+                <option value="print" {% if request.args.get('category') == 'print' %}selected{% endif %}>🖨️ Print</option>
+                <option value="system" {% if request.args.get('category') == 'system' %}selected{% endif %}>⚙️ System</option>
+                <option value="other" {% if request.args.get('category') == 'other' %}selected{% endif %}>📄 Other</option>
+            </select>
+
+            <input type="text" name="mac" placeholder="Filter by MAC" class="form-control"
+                   value="{{ request.args.get('mac', '') }}">
+
+            <input type="text" name="search" placeholder="Search message..." class="form-control"
+                   value="{{ request.args.get('search', '') }}">
+
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+            <a href="/logs" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
+
+            <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
+                <label class="auto-refresh-control">
+                    <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+                    <span>🔄 Auto-refresh (5s)</span>
+                </label>
+
+                <a href="/api/logs/export?format=csv" class="btn btn-primary" title="Export logs to CSV">
+                    💾 CSV
+                </a>
+                <a href="/api/logs/export?format=json" class="btn btn-primary" title="Export logs to JSON">
+                    📥 JSON
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- CATEGORY BADGES -->
+    <div class="log-categories" id="logCategories">
+        <!-- Will be populated by JavaScript -->
+    </div>
+
+    <!-- LOGS TABLE -->
+    <div class="table-container">
+        {% if logs and logs|length > 0 %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Client</th>
+                    <th>Level</th>
+                    <th>Category</th>
+                    <th>Message</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr class="{% if log.event_type == 'ERROR' %}table-danger{% elif log.event_type == 'WARNING' or log.event_type == 'WARN' %}table-warning{% endif %}">
+                    <td style="white-space: nowrap;">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else '—' }}</td>
+                    <td>
+                        {% if log.client %}
+                        <a href="/clients/{{ log.client.id }}" style="color: #667eea; text-decoration: none;">
+                            {{ log.client.hostname or log.client.mac[-8:] }}
+                        </a>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-{% if log.event_type == 'ERROR' %}danger{% elif log.event_type == 'WARNING' or log.event_type == 'WARN' %}warning{% elif log.event_type == 'DEBUG' %}info{% else %}success{% endif %}">
+                            {{ log.event_type }}
+                        </span>
+                    </td>
+                    <td>{{ log.category or 'other' }}</td>
+                    <td style="max-width: 600px; overflow: hidden; text-overflow: ellipsis;">
+                        {{ log.details[:150] }}{% if log.details and log.details|length > 150 %}...{% endif %}
+                    </td>
+                    <td><code>{{ log.ip_address or '—' }}</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-search" style="font-size: 48px; margin-bottom: 20px; opacity: 0.5;"></i>
+            <h3>No logs found</h3>
+            <p>Try adjusting your filters</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- PAGINATION -->
+    {% if total_pages > 1 %}
+    <nav>
+        <ul class="pagination">
+            {% if page > 1 %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('logs', page=page-1, level=request.args.get('level', ''), category=request.args.get('category', ''), mac=request.args.get('mac', ''), search=request.args.get('search', '')) }}">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">Page {{ page }} of {{ total_pages }}</span>
+            </li>
+
+            {% if page < total_pages %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('logs', page=page+1, level=request.args.get('level', ''), category=request.args.get('category', ''), mac=request.args.get('mac', ''), search=request.args.get('search', '')) }}">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+let autoRefreshInterval = null;
+let currentCategory = '{{ request.args.get("category", "") }}';
+let currentLevel = '{{ request.args.get("level", "") }}';
+
+// Start auto-refresh on page load if checkbox is checked
+window.addEventListener('DOMContentLoaded', () => {
+    loadCategoryStats();
+
+    const checkbox = document.getElementById('autoRefresh');
+    if (checkbox && checkbox.checked) {
+        startAutoRefresh();
+    }
+});
+
+// Stop refresh when leaving page
+window.addEventListener('beforeunload', () => {
+    stopAutoRefresh();
+});
+
+function toggleAutoRefresh() {
+    const checkbox = document.getElementById('autoRefresh');
+
+    if (checkbox && checkbox.checked) {
+        startAutoRefresh();
+    } else {
+        stopAutoRefresh();
+    }
+}
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) return;
+    autoRefreshInterval = setInterval(() => {
+        window.location.reload();
+    }, 5000);
+    console.log('Auto-refresh started');
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        console.log('Auto-refresh stopped');
+    }
+}
+
+async function loadCategoryStats() {
+    try {
+        const hours = 24;
+        const mac = '{{ request.args.get("mac", "") }}';
+
+        let url = `/api/logs/categories?hours=${hours}`;
+        if (mac) url += `&client_id=&mac=${mac}`;
+
+        const response = await fetch(url);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        displayStats(data.categories || []);
+    } catch (error) {
+        console.error('Error loading category stats:', error);
+    }
+}
+
+function displayStats(categories) {
+    const categoriesDiv = document.getElementById('logCategories');
+
+    if (!categories || categories.length === 0) {
+        categoriesDiv.innerHTML = '';
+        return;
+    }
+
+    // Create map of categories
+    const categoryMap = {};
+    categories.forEach(cat => {
+        const id = (cat.id || 'other').toString().toLowerCase();
+        categoryMap[id] = parseInt(cat.count) || 0;
+    });
+
+    // Get total
+    const totalCount = categories.reduce((sum, cat) => sum + (parseInt(cat.count) || 0), 0);
+
+    // Define category order
+    const categoryOrder = ['boot', 'network', 'freerdp', 'xserver', 'ntp', 'print', 'system', 'other'];
+    const categoryLabels = {
+        'boot': 'BOOT',
+        'network': 'NETWORK',
+        'freerdp': 'RDP',
+        'xserver': 'X SERVER',
+        'ntp': 'NTP',
+        'print': 'PRINT',
+        'system': 'SYSTEM',
+        'other': 'OTHER'
+    };
+
+    // Build HTML - show "ALL" first
+    let html = `
+        <div class="category-badge cat-all ${!currentCategory ? 'active' : ''}"
+             onclick="filterByCategory('')"
+             title="Click to show all categories">
+            <div class="category-count">${totalCount}</div>
+            <div class="category-label">📊 ALL</div>
+        </div>
+    `;
+
+    // Add other categories in order
+    categoryOrder.forEach(catId => {
+        const count = categoryMap[catId] || 0;
+        if (count > 0) {
+            const label = categoryLabels[catId] || catId.toUpperCase();
+            const icon = getCategoryIcon(catId);
+            const isActive = currentCategory === catId;
+
+            html += `
+                <div class="category-badge cat-${catId} ${isActive ? 'active' : ''}"
+                     onclick="filterByCategory('${catId}')"
+                     title="Click to filter by ${label}">
+                    <div class="category-count">${count}</div>
+                    <div class="category-label">${icon} ${label}</div>
+                </div>
+            `;
+        }
+    });
+
+    categoriesDiv.innerHTML = html;
+}
+
+function filterByCategory(category) {
+    // Build URL with current filters
+    let url = '/logs?';
+
+    if (category) url += `category=${category}&`;
+
+    const level = '{{ request.args.get("level", "") }}';
+    if (level) url += `level=${level}&`;
+
+    const mac = '{{ request.args.get("mac", "") }}';
+    if (mac) url += `mac=${mac}&`;
+
+    const search = '{{ request.args.get("search", "") }}';
+    if (search) url += `search=${search}&`;
+
+    // Remove trailing & or ?
+    url = url.replace(/[&?]$/, '');
+
+    window.location.href = url;
+}
+
+function getCategoryIcon(category) {
+    const cat = (category || 'other').toString().toLowerCase();
+
+    const icons = {
+        'all': '📊',
+        'boot': '🚀',
+        'network': '🌐',
+        'freerdp': '🔗',
+        'xserver': '🖥️',
+        'ntp': '⏰',
+        'print': '🖨️',
+        'system': '⚙️',
+        'other': '📄'
+    };
+
+    return icons[cat] || '📄';
+}
+
+function getCategoryColor(category) {
+    const cat = (category || 'other').toString().toLowerCase();
+
+    const colors = {
+        'all': '#667eea',
+        'boot': '#f59e0b',
+        'network': '#06b6d4',
+        'freerdp': '#10b981',
+        'xserver': '#3b82f6',
+        'ntp': '#8b5cf6',
+        'print': '#ec4899',
+        'system': '#6366f1',
+        'other': '#6b7280'
+    };
+
+    return colors[cat] || '#6b7280';
+}
+</script>
+
+</body>
+</html>

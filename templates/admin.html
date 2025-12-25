@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thin-Server Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+        
+        h2 {
+            color: #495057;
+            font-size: 20px;
+            margin: 30px 0 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+        }
+        
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            font-size: 13px;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        code {
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Admin Panel</h1>
+            <a href="/" class="btn btn-secondary">← Back to Clients</a>
+        </div>
+
+        <h2>👥 Administrators</h2>
+        <button class="btn btn-primary" onclick="openModal()">➕ Add Admin</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for admin in admins %}
+                <tr>
+                    <td><code>{{ admin.username }}</code></td>
+                    <td>{{ admin.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" onclick="deleteAdmin({{ admin.id }})">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>📋 Audit Log</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Admin</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in audit_logs %}
+                <tr>
+                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td><code>{{ log.admin_username }}</code></td>
+                    <td>{{ log.action }}</td>
+                    <td>{{ log.details or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="modal" class="modal" onclick="if(event.target===this) closeModal()">
+        <div class="modal-content">
+            <h2>Add Administrator</h2>
+            <form onsubmit="saveAdmin(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required minlength="6">
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">💾 Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        async function saveAdmin(e) {
+            e.preventDefault();
+            
+            const data = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+            
+            const response = await fetch('/api/admins', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                const error = await response.json();
+                alert('Error: ' + error.error);
+            }
+        }
+        
+        async function deleteAdmin(id) {
+            if (!confirm('Delete this admin?')) return;
+            
+            const response = await fetch(`/api/admins/${id}`, {method: 'DELETE'});
+            if (response.ok) {
+                location.reload();
+            } else {
+                const error = await response.json();
+                alert('Error: ' + error.error);
+            }
+        }
+    </script>
+</body>
+</html>

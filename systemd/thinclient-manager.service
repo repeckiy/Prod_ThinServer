@@ -1,0 +1,34 @@
+[Unit]
+Description=Thin-Server ThinClient Manager Web Application
+Documentation=https://github.com/thin-server/thinclient-manager
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/thinclient-manager
+Environment="FLASK_APP=app.py"
+Environment="PYTHONUNBUFFERED=1"
+
+# Start Flask application
+ExecStart=/usr/bin/python3 /opt/thinclient-manager/app.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/var/log/thinclient/app.log
+StandardError=append:/var/log/thinclient/error.log
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+# Thin-Server ThinClient Manager - Log Rotation Configuration
+# Rotates application logs to prevent disk space issues
+
+/var/log/thinclient/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 www-data www-data
+    sharedscripts
+    postrotate
+        # Reload Flask app if using systemd
+        if systemctl is-active --quiet thinclient-manager; then
+            systemctl reload thinclient-manager > /dev/null 2>&1 || true
+        fi
+    endscript
+}
+
+/var/log/thinclient/diagnostics/*.txt {
+    weekly
+    rotate 4
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 www-data www-data
+}
+
+/var/log/thinclient/metrics/*.jsonl {
+    weekly
+    rotate 4
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 www-data www-data
+}

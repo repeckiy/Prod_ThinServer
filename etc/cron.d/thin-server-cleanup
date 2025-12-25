@@ -1,0 +1,14 @@
+# Thin-Server ThinClient Manager - Automated Cleanup Tasks
+# Automatically cleans up old logs, expired tokens, and updates client statuses
+
+# Clear old boot tokens and set offline status (every 10 minutes)
+*/10 * * * * root /opt/thin-server/scripts/cleanup-old-boots.sh >> /var/log/thinclient/cron.log 2>&1
+
+# Delete old diagnostic files (daily at 2 AM)
+0 2 * * * root find /var/log/thinclient/diagnostics -type f -mtime +7 -delete
+
+# Delete old metrics files (daily at 3 AM)
+0 3 * * * root find /var/log/thinclient/metrics -type f -mtime +3 -delete
+
+# Rotate application logs if too large (daily at 4 AM)
+0 4 * * * root /usr/sbin/logrotate /etc/logrotate.d/thin-server --state /var/lib/logrotate/thin-server.status
